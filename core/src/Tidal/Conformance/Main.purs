@@ -15,7 +15,7 @@ import Data.Foldable (for_)
 import Effect (Effect)
 import Effect.Console (log)
 import Effect.Exception (throw)
-import Tidal.Conformance (Result, haskell, tidal, tidalVersion)
+import Tidal.Conformance (Result, harmony, haskell, tidal, tidalVersion)
 
 main :: Effect Unit
 main = runConformance
@@ -26,7 +26,9 @@ runConformance = do
   log ("  " <> show h <> " of " <> show (length haskell) <> " cases identical to GHC")
   t <- report ("Parity with Haskell Tidal " <> tidalVersion) tidal
   log ("  parity: " <> show t <> " of " <> show (length tidal) <> " cases identical to Tidal " <> tidalVersion)
-  let failed = (length haskell - h) + (length tidal - t)
+  m <- report "Tidal.Harmony against its specification in GHCi" harmony
+  log ("  " <> show m <> " of " <> show (length harmony) <> " harmony cases identical")
+  let failed = (length haskell - h) + (length tidal - t) + (length harmony - m)
   when (failed > 0) $ throw (show failed <> " case(s) differ from the reference")
 
 report :: String -> Array Result -> Effect Int

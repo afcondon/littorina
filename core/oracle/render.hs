@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as RenderMap
 import Text.Printf (printf)
 import Data.Ratio (numerator, denominator)
 import Data.List (intercalate)
+import qualified Data.List
 
 :{
 renderRat :: Rational -> String
@@ -29,4 +30,12 @@ renderEvent e = maybe "~" renderArc (whole e) ++ "|" ++ renderArc (part e) ++ "|
 
 render :: ControlPattern -> Rational -> Rational -> IO ()
 render p a b = print (map renderEvent (queryArc p (Arc a b)))
+
+-- The specification of Tidal.Harmony.harmonyAt (ours, not Tidal's): the
+-- pitch classes whose events hold t from their start, rounded halves up.
+harmonyAt :: Pattern Note -> Rational -> [Int]
+harmonyAt p t = Data.List.sort (Data.List.nub
+  [ floor (unNote (value e) + 0.5) `mod` 12
+  | e <- queryArc p (Arc t t)
+  , Just (Arc s e') <- [whole e], s <= t, t < e' ])
 :}

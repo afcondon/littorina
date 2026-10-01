@@ -3,7 +3,7 @@
 -- |
 -- | `events` are as oracle/render.hs renders them; `Nothing` means Tidal
 -- | refused the expression.
-module Tidal.Conformance.TidalGolden (tidalVersion, golden) where
+module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony) where
 
 import Data.Maybe (Maybe(..))
 
@@ -207,4 +207,37 @@ golden =
     , events: Just [ "0-1/3|0-1/3|s=\"bd\"", "1-4/3|1-4/3|s=\"sn\"", "2-7/3|2-7/3|s=\"bd\"", "3-10/3|3-10/3|s=\"sn\"", "1/3-2/3|1/3-2/3|s=\"bd\"", "4/3-5/3|4/3-5/3|s=\"sn\"", "7/3-8/3|7/3-8/3|s=\"bd\"", "10/3-11/3|10/3-11/3|s=\"sn\"", "2/3-1|2/3-1|s=\"hh\"", "5/3-2|5/3-2|s=\"hh\"", "8/3-3|8/3-3|s=\"hh\"", "11/3-4|11/3-4|s=\"hh\"" ] },
   { expr: "s \"<bd sn>@3 hh\"", from: 0, to: 4
     , events: Just [ "0-3/4|0-3/4|s=\"bd\"", "1-7/4|1-7/4|s=\"sn\"", "2-11/4|2-11/4|s=\"bd\"", "3-15/4|3-15/4|s=\"sn\"", "3/4-1|3/4-1|s=\"hh\"", "7/4-2|7/4-2|s=\"hh\"", "11/4-3|11/4-3|s=\"hh\"", "15/4-4|15/4-4|s=\"hh\"" ] }
+  ]
+
+-- | Tidal.Harmony.harmonyAt's cases: `pcs` as the specification in
+-- | render.hs computes them, `Nothing` where Tidal refused the pattern.
+harmony :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
+harmony =
+  [
+  { pattern: "c'maj7", at: "0", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "c'maj7", at: "1/3", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "0", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "3/2", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "2", pcs: Just [ 0, 4, 7, 9 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "5/2", pcs: Just [ 0, 4, 7, 9 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "4", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "c'maj e'min", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "c'maj e'min", at: "1/2", pcs: Just [ 4, 7, 11 ] },
+  { pattern: "c'maj e'min", at: "3/4", pcs: Just [ 4, 7, 11 ] },
+  { pattern: "[0,4,7]", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "e'min7'ii", at: "0", pcs: Just [ 2, 4, 7, 11 ] },
+  { pattern: "g'dom7'o", at: "0", pcs: Just [ 2, 5, 7, 11 ] },
+  { pattern: "c'major'5", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "cs'min fs'maj", at: "0", pcs: Just [ 1, 4, 8 ] },
+  { pattern: "cs'min fs'maj", at: "1/2", pcs: Just [ 1, 6, 10 ] },
+  { pattern: "-1 [-13, 11]", at: "0", pcs: Just [ 11 ] },
+  { pattern: "-1 [-13, 11]", at: "1/2", pcs: Just [ 11 ] },
+  { pattern: "a'min'd1", at: "0", pcs: Just [ 0, 4, 9 ] },
+  { pattern: "~ c'maj", at: "0", pcs: Just [  ] },
+  { pattern: "~ c'maj", at: "1/4", pcs: Just [  ] },
+  { pattern: "<c'maj ~>", at: "3/4", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "<c'maj ~>", at: "7/4", pcs: Just [  ] },
+  { pattern: "c'nonesuch", at: "0", pcs: Just [ 0 ] },
+  { pattern: "<c'maj7 f'maj7 g'dom7>", at: "1", pcs: Just [ 0, 4, 5, 9 ] },
+  { pattern: "<c'maj7 f'maj7 g'dom7>", at: "2", pcs: Just [ 2, 5, 7, 11 ] }
   ]

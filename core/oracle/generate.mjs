@@ -41,6 +41,21 @@ for (const c of cases) {
   if (!r.ok) console.log(`refused by Tidal: ${c.expr}`);
 }
 
+// Tidal.Harmony's sampler, against its specification in render.hs.
+const harmonyCases = (await readFile(join(here, "harmony.txt"), "utf8"))
+  .split("\n")
+  .filter((l) => l.trim() && !l.startsWith("#"))
+  .map((l) => {
+    const [, at, pattern] = l.match(/^(\S+)\s+"(.*)"$/);
+    return { at, pattern };
+  });
+const harmony = [];
+for (const c of harmonyCases) {
+  const r = await ghci(`harmonyAt ${JSON.stringify(c.pattern)} (${c.at})`);
+  harmony.push({ ...c, pcs: r.ok ? JSON.parse(r.out) : null });
+  if (!r.ok) console.log(`refused by Tidal: harmony ${c.pattern}`);
+}
+
 const str = (s) => JSON.stringify(s);
 const row = (g) =>
   `  { expr: ${str(g.expr)}, from: ${g.from}, to: ${g.to}\n    , events: ${
@@ -54,7 +69,7 @@ await writeFile(
 -- |
 -- | \`events\` are as oracle/render.hs renders them; \`Nothing\` means Tidal
 -- | refused the expression.
-module Tidal.Conformance.TidalGolden (tidalVersion, golden) where
+module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony) where
 
 import Data.Maybe (Maybe(..))
 
@@ -66,6 +81,14 @@ golden =
   [
 ${golden.map(row).join(",\n")}
   ]
+
+-- | Tidal.Harmony.harmonyAt's cases: \`pcs\` as the specification in
+-- | render.hs computes them, \`Nothing\` where Tidal refused the pattern.
+harmony :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
+harmony =
+  [
+${harmony.map((h) => `  { pattern: ${str(h.pattern)}, at: ${str(h.at)}, pcs: ${h.pcs === null ? "Nothing" : `Just [ ${h.pcs.join(", ")} ]`} }`).join(",\n")}
+  ]
 `,
 );
-console.log(`${golden.length} cases from Tidal ${version}`);
+console.log(`${golden.length} cases and ${harmony.length} harmony cases from Tidal ${version}`);
