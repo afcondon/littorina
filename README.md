@@ -50,3 +50,17 @@ Regenerate the goldens with `make oracle-prim` (GHC) and `make oracle-tidal`
 `engine/`, and before that `src/Tidal/`), so that reef could depend on it
 without the two repos depending on each other. This repo carries the two
 commits made as `engine/`; the port's earlier history is purerl-tidal's.
+
+## Licence
+
+GPL-3.0-or-later (`LICENSE`), as Tidal is: Littorina is a port of Tidal 1.10.1
+(its grammar, chord table and randomness are transcribed from Tidal's source),
+so it is a derivative work. `vendor/js-bigints` keeps its upstream MIT licence
+(`vendor/js-bigints/LICENSE`).
+
+What this means for the rest of the suite: anything that compiles Littorina
+in and is distributed (purerl-tidal, already GPL; a Triggerfish bundle) is
+distributed under the GPL as a whole. Its own source can still be MIT, which is
+GPL-compatible. Things that only talk to it over a socket (Limulus, the
+browser pages talking to the rig) are not combined with it.
+
