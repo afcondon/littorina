@@ -3,8 +3,10 @@
 **Tidal's patterns, mini-notation and line language, as one PureScript source
 that compiles to both the BEAM and JS**, bug-compatible with Haskell Tidal
 1.10.1 and held to it by a GHC oracle on both. Consumed by purerl-tidal (the
-BEAM: scheduler, voices, the rig), Triggerfish (the browser) and reef (the
-machines, whose quantisers take Tidal patterns).
+BEAM: scheduler, voices, the rig) and Triggerfish (the browser). The machines
+in reef take Tidal patterns through those two hosts, which sample them with
+Littorina and hand reef plain values, so reef itself never imports it (and
+stays outside the GPL; see Licence).
 
 Named for the periwinkle, the snail of the intertidal zone: the strip the tide
 covers and uncovers, beside Limulus, the other creature of the tides.
@@ -47,8 +49,8 @@ Regenerate the goldens with `make oracle-prim` (GHC) and `make oracle-tidal`
 `../live-coding/limulus` beside this repo.
 
 **History.** Moved out of purerl-tidal on 2026-10-01 (where it was
-`engine/`, and before that `src/Tidal/`), so that reef could depend on it
-without the two repos depending on each other. This repo carries the two
+`engine/`, and before that `src/Tidal/`), so that it stands on its own:
+one engine for every host, with its own conformance suite and oracles. This repo carries the two
 commits made as `engine/`; the port's earlier history is purerl-tidal's.
 
 ## Licence
