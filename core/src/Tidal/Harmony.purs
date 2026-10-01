@@ -23,15 +23,17 @@ module Tidal.Harmony
   ( Harmony
   , parseHarmony
   , harmonyAt
+  , harmonySampler
   ) where
 
 import Prelude
 
-import Data.Array (filter, mapMaybe, nub, sort)
+import Data.Array (mapMaybe, nub, sort)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Haskell.Double as Double
 import Haskell.Integer as Integer
+import Haskell.Rational (ratio)
 import Tidal.Core.Types (Time)
 import Tidal.Eval.Interpret (tpatToPattern)
 import Tidal.Parse.Haskell (TNote(..))
@@ -46,7 +48,7 @@ newtype Harmony = Harmony (Pattern Number)
 parseHarmony :: String -> Either String Harmony
 parseHarmony src = case parseTPat src of
   Right tpat -> Right (Harmony (map (\(TNote v) -> v) (tpatToPattern tpat)))
-  Left err -> Left ("harmony " <> show src <> ": " <> show err)
+  Left err -> Left ("harmony \"" <> src <> "\": " <> show err)
 
 -- | The pitch classes (0 = C) sounding at cycle position `t`, ascending.
 harmonyAt :: Harmony -> Time -> Array Int
@@ -57,3 +59,12 @@ harmonyAt (Harmony p) t =
     Digital { whole: Arc w, value } | w.start <= t && t < w.stop -> Just value
     _ -> Nothing
   pitchClass x = Integer.toInt (Integer.mod (Double.floor (x + 0.5)) (Integer.fromInt 12))
+
+-- | What a host hands `Reef.Odonus.followHarmony` for one step: pattern text
+-- | to the pitch classes at cycle `num / den`. Text that does not parse reads
+-- | as a rest. A host at step `n`, each step `q` quarter-beats long, samples
+-- | at `harmonySampler (n * q) 16`: four beats to the cycle, as Tidal counts.
+harmonySampler :: Int -> Int -> String -> Array Int
+harmonySampler num den txt = case parseHarmony txt of
+  Right h -> harmonyAt h (ratio (Integer.fromInt num) (Integer.fromInt den))
+  Left _ -> []
