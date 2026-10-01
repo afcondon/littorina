@@ -40,6 +40,7 @@ import Data.String (Pattern(..), Replacement(..), joinWith, replaceAll, split)
 import Data.String as String
 import Data.String.CodeUnits (fromCharArray)
 import Data.Tuple (Tuple(..))
+import Haskell.Double as Double
 import Haskell.Int as H
 import Haskell.Integer (Integer)
 import Haskell.Integer as Integer
@@ -160,6 +161,7 @@ eval = case _ of
   [ "shiftL", a, n ] -> show <$> (H.shiftL <$> int a <*> smallInt n)
   [ "shiftR", a, n ] -> show <$> (H.shiftR <$> int a <*> smallInt n)
   [ "xorwise", a ] -> show <<< xorwise <$> int a
+  [ "throughDouble", r ] -> show <<< Double.throughDouble <$> rational r
   [ "show", r ] -> show <$> rational r
   [ "add", r, s ] -> show <$> ((+) <$> rational r <*> rational s)
   [ "sub", r, s ] -> show <$> ((-) <$> rational r <*> rational s)

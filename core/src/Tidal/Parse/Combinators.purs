@@ -552,16 +552,12 @@ pIntTPat = defer \_ -> do
   loc <- located pInt
   pure $ TPat_Atom loc
 
--- | Parse a rational number
+-- | Parse a rational number: Tidal's `pRatio` (`pRational` in ParseBP), so a
+-- | rate reads as Tidal reads it (`0.5625` is 9/16, `0.1` the Double nearest
+-- | 1/10). Was read through a Number to thousandths, which made `/0.5625`
+-- | slow by 563/1000 (found by the harmony oracle, 2026-10-01).
 pRational :: TidalParser Rational
-pRational = do
-  n <- pNumber
-  mDenom <- optionalT do
-    _ <- liftP $ char '%'
-    pNumber
-  pure $ case mDenom of
-    Just d -> Int.round (n * 1000.0) % Int.round (d * 1000.0)
-    Nothing -> Int.round (n * 1000.0) % 1000
+pRational = liftP pRatio
 
 -- | Optional combinator for TidalParser
 optionalT :: forall a. TidalParser a -> TidalParser (Maybe a)

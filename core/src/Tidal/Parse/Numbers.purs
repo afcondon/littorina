@@ -28,6 +28,7 @@ import Haskell.Parsec (Parsec, fail, char, satisfy, digit, letter)
 import Haskell.Parsec as Parsec
 import Tidal.Parse.State (ParseState)
 import Data.Int as Int
+import Haskell.Double (throughDouble)
 import Haskell.Integer (Integer)
 import Haskell.Integer as Integer
 import Haskell.Rational (Rational, denominator, fromInteger, numerator, ratio, toNumber, (%))
@@ -90,12 +91,14 @@ pRatio = do
 pFraction :: Rational -> P Rational
 pFraction n = do
   _ <- char '%'
-  d <- pInteger
+  d <- numerator <<< throughDouble <<< fromInteger <$> pInteger
   if denominator n == one && d /= zero then pure (ratio (numerator n) d) else fail "fractions need int numerator and denominator"
 
 -- | `intOrFloat`: `try pFloat <|> pInteger`, exactly.
+-- | Both read as a Double and come back through `toRational`, as Tidal's
+-- | do (`Haskell.Double.throughDouble`): `0.1` is the Double nearest 1/10.
 intOrFloat :: P Rational
-intOrFloat = Parsec.try pFloat <|> (fromInteger <$> pInteger)
+intOrFloat = throughDouble <$> (Parsec.try pFloat <|> (fromInteger <$> pInteger))
 
 -- | `pFloat`: digits, then optionally `.digits`, then optionally
 -- | `e[-]digits`. A `.` or `e` not followed by digits fails the whole float
