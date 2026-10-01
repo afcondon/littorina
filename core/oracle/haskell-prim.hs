@@ -1,6 +1,6 @@
 -- Ask GHC (and Tidal's own Sound.Tidal.UI) what every case in
 -- haskell-prim.txt is, and print src/Tidal/Conformance/HaskellGolden.purs.
--- From engine/core: `make oracle-prim` in purerl-tidal runs it.
+-- `make oracle-prim` in littorina runs it.
 import Data.Bits (shiftL, shiftR)
 import Text.Parsec hiding (count)
 import Text.Parsec.String (Parser)

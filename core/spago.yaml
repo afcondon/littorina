@@ -1,11 +1,11 @@
 # The engine: Tidal's patterns, mini-notation and line language, and the
 # reference-semantics types (Haskell.*) they are written on. One source,
 # compiled by every column (../columns/*) and consumed by purerl-tidal (the
-# BEAM) and Triggerfish (JS). Depends only on packages whose API is the same
+# BEAM), Triggerfish (JS) and reef. Depends only on packages whose API is the same
 # in the purerl package set and the registry; js-bigints is the registry's on
-# JS and its purerl port (purerl-tidal/vendor/js-bigints) on the BEAM.
+# JS and its purerl port (../vendor/js-bigints) on the BEAM.
 package:
-  name: tidal-engine
+  name: littorina
   dependencies:
     - arrays
     - console

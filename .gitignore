@@ -1,0 +1,8 @@
+node_modules/
+.spago/
+output/
+output-erl/
+ebin/
+erl_crash.dump
+spago.lock
+pins/

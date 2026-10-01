@@ -5,9 +5,9 @@
 // Needs a GHCi running Tidal behind Limulus's server (http://localhost:3036,
 // or ORACLE_URL). Each case is rendered with oracle/render.hs, the same
 // form Tidal.Conformance renders in. A case GHCi refuses is recorded as
-// refused, and purerl-tidal must refuse it too.
+// refused, and littorina must refuse it too.
 //
-//   node engine/core/oracle/generate.mjs
+//   node core/oracle/generate.mjs   (or `make oracle-tidal`)
 
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

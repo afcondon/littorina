@@ -1,0 +1,8 @@
+{
+  "name": "littorina",
+  "private": true,
+  "description": "Tidal's patterns, mini-notation and line language as one PureScript source for the BEAM and JS; the erlang column builds with purs-backend-erl",
+  "devDependencies": {
+    "purs-backend-erl": "^0.0.3"
+  }
+}
