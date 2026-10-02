@@ -39,11 +39,14 @@ import Data.String (trim)
 import Data.String as String
 import Data.String.CodeUnits as CU
 import Data.Tuple (Tuple(..))
-import Tidal.Controls (Control, Kind(..), controlFromMini, controls, keepLeft, keepRight)
-import Tidal.Eval.Interpret (timeParam)
+import Tidal.Controls (Control, Kind(..), controlFromMini, controls, keepLeft, keepRight, pN)
+import Tidal.Eval.Interpret (timeParam, tpatToPattern)
+import Tidal.Parse.Class (class AtomParseable)
+import Tidal.Parse.Haskell (TInt(..), TNote(..), Vocable(..))
+import Tidal.Scales as Scales
 import Tidal.Parse.Parser (parseTPat)
 import Tidal.Pattern.Core (fast, innerJoin, rev, slow)
-import Tidal.Pattern.Types (ControlPattern, silence)
+import Tidal.Pattern.Types (class TidalEnum, ControlPattern, Pattern, silence)
 
 -- | What a block asks for.
 data Command
@@ -210,6 +213,9 @@ data Value
   -- Tidal computes those with liftA2. It decides how `fast` applies it.
   | VNumber Number Rational Boolean
   | VFunction String (Value -> Either String Value)
+  -- A pattern of numbers not yet given to a control, as `scale` returns
+  -- (Tidal's `Fractional a => Pattern a`); `n` and `note` take it.
+  | VNotes (Pattern Number)
 
 kindName :: Value -> String
 kindName = case _ of
@@ -217,6 +223,7 @@ kindName = case _ of
   VString _ -> "a string"
   VNumber _ _ _ -> "a number"
   VFunction name _ -> "the function " <> name
+  VNotes _ -> "a note pattern"
 
 asPattern :: Value -> Either String ControlPattern
 asPattern = case _ of
@@ -248,6 +255,7 @@ controlFunction k = function k.name case _ of
     KString -> Left (k.name <> " wants a string, not a number")
     KSound -> Left (k.name <> " wants a string, not a number")
     _ -> map VPattern (miniControl k (show' x))
+  VNotes p | k.kind == KNote -> Right (VPattern (pN k.key p))
   other -> Left (k.name <> " wants a string, not " <> kindName other)
   where
   show' x = if Int.toNumber (Int.round x) == x then show (Int.round x) else show x
@@ -272,6 +280,32 @@ timeTransform name f = function name case _ of
     Left err -> Left (name <> ": mini-notation " <> show src <> ": " <> show err)
   other -> Left (name <> " wants a time, not " <> kindName other)
 
+-- | `scale "major" "0 .. 7"`: the name read as Tidal's String, the degrees as
+-- | its Int (note names allowed, as `parseIntNote` allows them).
+scaleFunction :: Value
+scaleFunction = function "scale" case _ of
+  VString names -> do
+    np <- mini "scale" names (\(Vocable v) -> v)
+    pure $ function "scale" case _ of
+      VString degrees -> VNotes <<< Scales.scale np <$> mini "scale" degrees (\(TInt i) -> i)
+      other -> Left ("scale wants its degrees as a string, not " <> kindName other)
+  other -> Left ("scale wants a scale name as a string, not " <> kindName other)
+
+-- | Mini-notation at one of Tidal's atom types.
+mini :: forall t a. AtomParseable t => TidalEnum t => String -> String -> (t -> a) -> Either String (Pattern a)
+mini name src f = case parseTPat src of
+  Right tpat -> Right (map f (tpatToPattern tpat))
+  Left err -> Left (name <> ": mini-notation " <> show src <> ": " <> show err)
+
+-- | A value as a pattern of numbers, where Tidal's `Num (Pattern a)` would
+-- | read it: a string as notes, a number as `pure`.
+asNotes :: Value -> Either String (Pattern Number)
+asNotes = case _ of
+  VNotes p -> Right p
+  VString src -> mini "note" src (\(TNote v) -> v)
+  VNumber x _ _ -> Right (pure x)
+  other -> Left (kindName other <> " is not a pattern of notes")
+
 -- | Every name the language knows, controls included.
 functions :: Array (Tuple String Value)
 functions =
@@ -280,6 +314,7 @@ functions =
   , Tuple "rev" (transform "rev" rev)
   , Tuple "id" (function "id" Right)
   , Tuple "silence" (VPattern silence)
+  , Tuple "scale" scaleFunction
   ]
     <> map (\k -> Tuple k.name (controlFunction k)) controls
 
@@ -334,8 +369,19 @@ binary op a b = case op, a, b of
   "-", VNumber x r _, VNumber y s _ -> Right (VNumber (x - y) (r - s) false)
   "*", VNumber x r _, VNumber y s _ -> Right (VNumber (x * y) (r * s) false)
   "/", VNumber x r _, VNumber y s _ -> Right (VNumber (x / y) (r / s) false)
+  "+", _, _ | notes -> lift (+)
+  "-", _, _ | notes -> lift (-)
   _, _, _ -> Left (op <> " on " <> kindName a <> " and " <> kindName b <> " is not supported yet")
   where
+  -- Tidal's `Num (Pattern a)`: `liftA2`, structure from both sides.
+  notes = isNotes a || isNotes b
+  isNotes = case _ of
+    VNotes _ -> true
+    _ -> false
+  lift f = do
+    p <- asNotes a
+    q <- asNotes b
+    pure (VNotes (f <$> p <*> q))
   both f = do
     p <- asPattern a
     q <- asPattern b
