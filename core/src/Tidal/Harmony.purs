@@ -22,15 +22,20 @@
 module Tidal.Harmony
   ( Harmony
   , parseHarmony
+  , checkHarmony
   , harmonyAt
   , harmonySampler
   ) where
 
 import Prelude
 
-import Data.Array (mapMaybe, nub, sort)
+import Data.Array (filter, index, mapMaybe, nub, sort)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
+import Data.String (joinWith)
+import Data.String as Str
+import Data.String.CodeUnits as CU
+import Tidal.Chords (lookupTidalChord)
 import Haskell.Double as Double
 import Haskell.Integer as Integer
 import Haskell.Rational (ratio)
@@ -49,6 +54,26 @@ parseHarmony :: String -> Either String Harmony
 parseHarmony src = case parseTPat src of
   Right tpat -> Right (Harmony (map (\(TNote v) -> v) (tpatToPattern tpat)))
   Left err -> Left ("harmony \"" <> src <> "\": " <> show err)
+
+-- | `parseHarmony`, and every chord name known. Tidal plays a chord name it
+-- | does not know as the bare root (`fromMaybe [0]`, kept here on purpose),
+-- | which is a silent wrong note; a host checking a pattern before keeping it
+-- | wants the name refused instead. The name is what follows a note's first
+-- | `'` (`c'maj7'ii`: maj7).
+checkHarmony :: String -> Either String String
+checkHarmony src = case parseHarmony src of
+  Left err -> Left err
+  Right _ -> case filter (isNothing <<< lookupTidalChord) (nub (mapMaybe chordName (words src))) of
+    [] -> Right src
+    bad -> Left ("harmony \"" <> src <> "\": no chord named " <> joinWith ", " bad
+      <> " (Tidal's chordTable: major, minor, maj7, dom7, min7, sus4, ...)")
+  where
+  words s = Str.split (Str.Pattern " ") (CU.fromCharArray (map spaceUnlessWord (CU.toCharArray s)))
+  spaceUnlessWord c = if isWord c then c else ' '
+  isWord c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '\'' || c == '#'
+  chordName w = case index (Str.split (Str.Pattern "'") w) 1 of
+    Just n | n /= "" -> Just n
+    _ -> Nothing
 
 -- | The pitch classes (0 = C) sounding at cycle position `t`, ascending.
 harmonyAt :: Harmony -> Time -> Array Int
