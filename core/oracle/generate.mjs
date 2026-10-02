@@ -56,7 +56,23 @@ for (const c of harmonyCases) {
   if (!r.ok) console.log(`refused by Tidal: harmony ${c.pattern}`);
 }
 
+// Tidal.Scales' sampler, against its specification in render.hs.
+const scaleCases = (await readFile(join(here, "scale-at.txt"), "utf8"))
+  .split("\n")
+  .filter((l) => l.trim() && !l.startsWith("#"))
+  .map((l) => {
+    const [, at, pattern] = l.match(/^(\S+)\s+"(.*)"$/);
+    return { at, pattern };
+  });
+const scaleAt = [];
+for (const c of scaleCases) {
+  const r = await ghci(`scaleAt ${JSON.stringify(c.pattern)} (${c.at})`);
+  scaleAt.push({ ...c, pcs: r.ok ? JSON.parse(r.out) : null });
+  if (!r.ok) console.log(`refused by Tidal: scale ${c.pattern}`);
+}
+
 const str = (s) => JSON.stringify(s);
+const sampled = (h) => `  { pattern: ${str(h.pattern)}, at: ${str(h.at)}, pcs: ${h.pcs === null ? "Nothing" : `Just [ ${h.pcs.join(", ")} ]`} }`;
 const row = (g) =>
   `  { expr: ${str(g.expr)}, from: ${g.from}, to: ${g.to}\n    , events: ${
     g.events === null ? "Nothing" : `Just [ ${g.events.map(str).join(", ")} ]`
@@ -69,7 +85,7 @@ await writeFile(
 -- |
 -- | \`events\` are as oracle/render.hs renders them; \`Nothing\` means Tidal
 -- | refused the expression.
-module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony) where
+module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony, scaleAt) where
 
 import Data.Maybe (Maybe(..))
 
@@ -87,8 +103,15 @@ ${golden.map(row).join(",\n")}
 harmony :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
 harmony =
   [
-${harmony.map((h) => `  { pattern: ${str(h.pattern)}, at: ${str(h.at)}, pcs: ${h.pcs === null ? "Nothing" : `Just [ ${h.pcs.join(", ")} ]`} }`).join(",\n")}
+${harmony.map(sampled).join(",\n")}
+  ]
+
+-- | Tidal.Scales.scaleAt's cases, likewise (\`pcs\` are the steps).
+scaleAt :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
+scaleAt =
+  [
+${scaleAt.map(sampled).join(",\n")}
   ]
 `,
 );
-console.log(`${golden.length} cases and ${harmony.length} harmony cases from Tidal ${version}`);
+console.log(`${golden.length} cases, ${harmony.length} harmony and ${scaleAt.length} scale cases from Tidal ${version}`);

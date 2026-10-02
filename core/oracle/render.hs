@@ -38,4 +38,15 @@ harmonyAt p t = Data.List.sort (Data.List.nub
   [ floor (unNote (value e) + 0.5) `mod` 12
   | e <- queryArc p (Arc t t)
   , Just (Arc s e') <- [whole e], s <= t, t < e' ])
+
+-- The specification of Tidal.Scales.scaleAt (ours): the steps of the scales
+-- named at t, sampled as harmonyAt samples, rounded halves up; an unknown
+-- name gives nothing. scaleTable at Double, as Odonus reads it.
+scaleAt :: Pattern String -> Rational -> [Int]
+scaleAt p t = Data.List.sort (Data.List.nub
+  [ floor (x + 0.5)
+  | e <- queryArc p (Arc t t)
+  , Just (Arc s e') <- [whole e], s <= t, t < e'
+  , Just steps <- [lookup (value e) (scaleTable :: [(String, [Double])])]
+  , x <- steps ])
 :}

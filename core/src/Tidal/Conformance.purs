@@ -18,11 +18,13 @@
 -- | - `harmony`: `Tidal.Harmony.harmonyAt` against its specification, a
 -- |   Haskell function in oracle/render.hs that GHCi runs on Tidal's own
 -- |   patterns (oracle/harmony.txt); a pattern Tidal refused must be refused.
+-- | - `scales`: `Tidal.Scales.scaleAt` likewise (oracle/scale-at.txt).
 module Tidal.Conformance
   ( Result
   , tidal
   , haskell
   , harmony
+  , scales
   , render
   , tidalVersion
   ) where
@@ -52,6 +54,7 @@ import JS.BigInt as BigInt
 import Tidal.Conformance.HaskellGolden as HaskellGolden
 import Tidal.Conformance.TidalGolden as TidalGolden
 import Tidal.Harmony (harmonyAt, parseHarmony)
+import Tidal.Scales (parseScalePattern, scaleAt)
 import Tidal.Line (Command(..), parseLine)
 import Tidal.Pattern.Core (queryArc)
 import Tidal.Pattern.Random (timeToIntSeed, timeToRand, xorwise)
@@ -88,6 +91,20 @@ harmony = map compare1 TidalGolden.harmony
     , expected: maybe "refused" show g.pcs
     , actual: case parseHarmony g.pattern, position g.at of
         Right h, Just t -> show (harmonyAt h t)
+        Left _, _ -> "refused"
+        _, Nothing -> "(bad position " <> g.at <> ")"
+    }
+  position at = rational at <|> (fromInt <$> smallInt at)
+
+-- | The scale sampler, compared.
+scales :: Array Result
+scales = map compare1 TidalGolden.scaleAt
+  where
+  compare1 g =
+    { input: "scaleAt " <> show g.pattern <> " (" <> g.at <> ")"
+    , expected: maybe "refused" show g.pcs
+    , actual: case parseScalePattern g.pattern, position g.at of
+        Right sp, Just t -> show (scaleAt sp t)
         Left _, _ -> "refused"
         _, Nothing -> "(bad position " <> g.at <> ")"
     }

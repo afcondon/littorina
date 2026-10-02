@@ -17,17 +17,29 @@ module Tidal.Scales
   , scaleTable
   , scaleList
   , lookupScale
+  , ScalePattern
+  , parseScalePattern
+  , scaleAt
+  , scaleSampler
   ) where
 
 import Prelude
 
-import Data.Array (find, length, (!!))
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Array (concatMap, find, length, mapMaybe, nub, sort, (!!))
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (joinWith)
 import Data.Tuple (Tuple(..), fst, snd)
 import Haskell.Int as HInt
 import Haskell.Integer as Integer
-import Tidal.Pattern.Types (Pattern, applyLeft)
+import Haskell.Double as Double
+import Haskell.Rational (ratio)
+import Tidal.Core.Types (Time)
+import Tidal.Eval.Interpret (tpatToPattern)
+import Tidal.Parse.Haskell (Vocable(..))
+import Tidal.Parse.Parser (parseTPat)
+import Tidal.Pattern.Core (queryArc)
+import Tidal.Pattern.Types (Arc(..), Event(..), Pattern, applyLeft)
 
 -- | Notes from degrees, in the scale each degree's event meets.
 scale :: Pattern String -> Pattern Int -> Pattern Number
@@ -53,6 +65,39 @@ lookupIn table name = snd <$> find (\t -> fst t == name) table
 -- | A scale's steps from 0, by Tidal's name.
 lookupScale :: String -> Maybe (Array Number)
 lookupScale = lookupIn scaleTable
+
+-- | A pattern of scale names, for a machine to follow (Odonus's `scale`
+-- | move): `"<dorian mixolydian>/4"`, read as Tidal reads a `Pattern String`.
+newtype ScalePattern = ScalePattern (Pattern String)
+
+parseScalePattern :: String -> Either String ScalePattern
+parseScalePattern src = case parseTPat src of
+  Right tpat -> Right (ScalePattern (map (\(Vocable v) -> v) (tpatToPattern tpat)))
+  Left err -> Left ("scale \"" <> src <> "\": " <> show err)
+
+-- | The steps (semitones from the root, ascending) of the scales named at
+-- | cycle position `t`, sampled as `Tidal.Harmony.harmonyAt` samples: the
+-- | events whose whole holds `t` from its start. Stacked names give the union;
+-- | a microtonal step goes to the nearer semitone, halves upwards; an unknown
+-- | name gives nothing. Ours, not Tidal's, and specified in Haskell in
+-- | `oracle/render.hs` (`scaleAt`), which GHC holds this to.
+scaleAt :: ScalePattern -> Time -> Array Int
+scaleAt (ScalePattern p) t =
+  sort (nub (map semitone (concatMap steps (mapMaybe holding (queryArc p t t)))))
+  where
+  holding = case _ of
+    Digital { whole: Arc w, value } | w.start <= t && t < w.stop -> Just value
+    _ -> Nothing
+  steps name = fromMaybe [] (lookupScale name)
+  semitone x = Integer.toInt (Double.floor (x + 0.5))
+
+-- | What a host hands `Reef.Odonus.followScale` for one step, as
+-- | `Tidal.Harmony.harmonySampler` does for the harmony: text to the steps at
+-- | cycle `num / den`; text that does not parse is a rest.
+scaleSampler :: Int -> Int -> String -> Array Int
+scaleSampler num den txt = case parseScalePattern txt of
+  Right sp -> scaleAt sp (ratio (Integer.fromInt num) (Integer.fromInt den))
+  Left _ -> []
 
 -- | Every name, space-separated, in the table's order: Tidal's `scaleList`.
 scaleList :: String

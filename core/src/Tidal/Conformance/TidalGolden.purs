@@ -3,7 +3,7 @@
 -- |
 -- | `events` are as oracle/render.hs renders them; `Nothing` means Tidal
 -- | refused the expression.
-module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony) where
+module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony, scaleAt) where
 
 import Data.Maybe (Maybe(..))
 
@@ -436,4 +436,36 @@ harmony =
   { pattern: "[c@2 e]/0.5625", at: "9/16", pcs: Just [ 0 ] },
   { pattern: "[[d,g,gs]@6 [e,a,as]@3]/0.5625", at: "27/16", pcs: Just [ 2, 7, 8 ] },
   { pattern: "[[c,e,g]@4 [cs,fs,as]@17]/1.3125", at: "21/16", pcs: Just [ 0, 4, 7 ] }
+  ]
+
+-- | Tidal.Scales.scaleAt's cases, likewise (`pcs` are the steps).
+scaleAt :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
+scaleAt =
+  [
+  { pattern: "major", at: "0", pcs: Just [ 0, 2, 4, 5, 7, 9, 11 ] },
+  { pattern: "dorian", at: "1/2", pcs: Just [ 0, 2, 3, 5, 7, 9, 10 ] },
+  { pattern: "<dorian mixolydian>/4", at: "0", pcs: Just [ 0, 2, 3, 5, 7, 9, 10 ] },
+  { pattern: "<dorian mixolydian>/4", at: "3", pcs: Just [ 0, 2, 3, 5, 7, 9, 10 ] },
+  { pattern: "<dorian mixolydian>/4", at: "4", pcs: Just [ 0, 2, 4, 5, 7, 9, 10 ] },
+  { pattern: "<dorian mixolydian>/4", at: "15/4", pcs: Just [ 0, 2, 3, 5, 7, 9, 10 ] },
+  { pattern: "dorian lydian", at: "0", pcs: Just [ 0, 2, 3, 5, 7, 9, 10 ] },
+  { pattern: "dorian lydian", at: "1/2", pcs: Just [ 0, 2, 4, 6, 7, 9, 11 ] },
+  { pattern: "dorian lydian", at: "1/3", pcs: Just [ 0, 2, 3, 5, 7, 9, 10 ] },
+  { pattern: "[dorian,lydian]", at: "0", pcs: Just [ 0, 2, 3, 4, 5, 6, 7, 9, 10, 11 ] },
+  { pattern: "~", at: "0", pcs: Just [  ] },
+  { pattern: "major ~", at: "1/2", pcs: Just [  ] },
+  { pattern: "nonesuch", at: "0", pcs: Just [  ] },
+  { pattern: "bayati", at: "0", pcs: Just [ 0, 2, 3, 5, 7, 8, 10 ] },
+  { pattern: "hijaz", at: "0", pcs: Just [ 0, 1, 4, 5, 7, 9, 10 ] },
+  { pattern: "sikah", at: "0", pcs: Just [ 0, 2, 4, 6, 7, 9, 11 ] },
+  { pattern: "rast", at: "0", pcs: Just [ 0, 2, 4, 5, 7, 9, 11 ] },
+  { pattern: "iraq", at: "0", pcs: Just [ 0, 2, 4, 5, 7, 9, 11 ] },
+  { pattern: "saba", at: "0", pcs: Just [ 0, 2, 3, 4, 6, 8, 10 ] },
+  { pattern: "chromatic", at: "0", pcs: Just [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ] },
+  { pattern: "messiaen3", at: "0", pcs: Just [ 0, 2, 3, 4, 6, 7, 8, 10, 11 ] },
+  { pattern: "<minPent majPent ritusen>", at: "0", pcs: Just [ 0, 3, 5, 7, 10 ] },
+  { pattern: "<minPent majPent ritusen>", at: "2", pcs: Just [ 0, 2, 5, 7, 9 ] },
+  { pattern: "{major minor locrian}%4", at: "5/4", pcs: Just [ 0, 1, 3, 5, 6, 8, 10 ] },
+  { pattern: "major?", at: "0", pcs: Just [ 0, 2, 4, 5, 7, 9, 11 ] },
+  { pattern: "major [", at: "0", pcs: Nothing }
   ]
