@@ -45,7 +45,7 @@ import Tidal.Parse.Class (class AtomParseable)
 import Tidal.Parse.Haskell (TInt(..), TNote(..), Vocable(..))
 import Tidal.Scales as Scales
 import Tidal.Parse.Parser (parseTPat)
-import Tidal.Pattern.Core (fast, innerJoin, rev, slow)
+import Tidal.Pattern.Core (every, fast, innerJoin, rev, slow)
 import Tidal.Pattern.Types (class TidalEnum, ControlPattern, Pattern, silence)
 
 -- | What a block asks for.
@@ -280,6 +280,29 @@ timeTransform name f = function name case _ of
     Left err -> Left (name <> ": mini-notation " <> show src <> ": " <> show err)
   other -> Left (name <> " wants a time, not " <> kindName other)
 
+-- | `every 4 (fast 2) $ s "bd sn"`, and `every "<2 3>" rev`: Tidal's
+-- | `every tp f p = innerJoin $ (\t -> _every t f p) <$> tp`, through
+-- | `innerJoin` even for a constant, as Tidal has no shortcut here (unlike
+-- | `fast`). The count is Tidal's Int; the function is any the language
+-- | builds (`fast 2`, `rev`, `(# speed 2)` is not yet: no sections).
+everyFunction :: Value
+everyFunction = function "every" \nv -> do
+  counts <- case nv of
+    VNumber x _ _ | Just n <- Int.fromNumber x -> Right (pure n)
+    VNumber x _ _ -> Left ("every wants a whole number of cycles, not " <> show x)
+    VString src -> mini "every" src (\(TInt i) -> i)
+    other -> Left ("every wants a number of cycles, not " <> kindName other)
+  pure $ function "every" case _ of
+    fv@(VFunction _ _) -> Right $ function "every" \pv -> do
+      p <- asPattern pv
+      -- the function's errors surface here, once, rather than inside a query
+      _ <- applyValue fv (VPattern p) >>= asPattern
+      let f q = case applyValue fv (VPattern q) >>= asPattern of
+            Right r -> r
+            Left _ -> q
+      pure (VPattern (innerJoin (map (\n -> every n f p) counts)))
+    other -> Left ("every wants a function to apply, not " <> kindName other)
+
 -- | `scale "major" "0 .. 7"`: the name read as Tidal's String, the degrees as
 -- | its Int (note names allowed, as `parseIntNote` allows them).
 scaleFunction :: Value
@@ -315,6 +338,7 @@ functions =
   , Tuple "id" (function "id" Right)
   , Tuple "silence" (VPattern silence)
   , Tuple "scale" scaleFunction
+  , Tuple "every" everyFunction
   ]
     <> map (\k -> Tuple k.name (controlFunction k)) controls
 

@@ -199,3 +199,12 @@
 0 1 n (scale "rast" "-1 .. 12")
 0 1 n (scale "saba" "-1 .. 12")
 0 1 n (scale "iraq" "-1 .. 12")
+# every (the line language, 2026-10-02): Tidal's innerJoin, constant or patterned
+0 8 every 2 (fast 2) $ s "bd sn"
+0 8 every 3 rev $ n "0 1 2 3"
+0 8 every "<2 3>" (fast 2) $ s "bd sn"
+0 6 every 0 rev $ s "bd sn"
+0 6 every (-2) rev $ n "0 1"
+0 4 every 2 (slow 2) $ s "bd sn hh"
+0 6 every 2 (every 3 rev) $ n "0 1 2"
+0 4 every 1.5 rev $ s "bd"
