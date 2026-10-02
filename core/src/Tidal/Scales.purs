@@ -21,14 +21,17 @@ module Tidal.Scales
   , parseScalePattern
   , scaleAt
   , scaleSampler
+  , checkScalePattern
   ) where
 
 import Prelude
 
-import Data.Array (concatMap, find, length, mapMaybe, nub, sort, (!!))
+import Data.Array (concatMap, filter, find, length, mapMaybe, nub, sort, (!!))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (joinWith)
+import Data.String as String
+import Data.String.CodeUnits as CU
 import Data.Tuple (Tuple(..), fst, snd)
 import Haskell.Int as HInt
 import Haskell.Integer as Integer
@@ -98,6 +101,25 @@ scaleSampler :: Int -> Int -> String -> Array Int
 scaleSampler num den txt = case parseScalePattern txt of
   Right sp -> scaleAt sp (ratio (Integer.fromInt num) (Integer.fromInt den))
   Left _ -> []
+
+-- | What a host checks before handing a machine a scale pattern: that Tidal
+-- | can read it, and that every name in it is in the table, since an unknown
+-- | name would sample to nothing and leave the scale silently where it was.
+-- | Mini-notation's only words are its atoms, so the names are the words.
+checkScalePattern :: String -> Either String String
+checkScalePattern src = case parseScalePattern src of
+  Left err -> Left err
+  Right _ -> case filter (\w -> lookupScale w == Nothing) (nub (names src)) of
+    [] -> Right src
+    bad -> Left ("scale \"" <> src <> "\": no scale named " <> joinWith ", " bad
+      <> " (Tidal's scaleList has " <> show (length scaleTable) <> ": major, dorian, minPent, ...)")
+  where
+  names s = filter startsWithLetter (String.split (String.Pattern " ") (CU.fromCharArray (map spaceUnlessWord (CU.toCharArray s))))
+  spaceUnlessWord c = if isWord c then c else ' '
+  isWord c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+  startsWithLetter w = case CU.charAt 0 w of
+    Just c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+    Nothing -> false
 
 -- | Every name, space-separated, in the table's order: Tidal's `scaleList`.
 scaleList :: String
