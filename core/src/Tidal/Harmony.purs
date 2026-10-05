@@ -25,6 +25,8 @@ module Tidal.Harmony
   , checkHarmony
   , harmonyAt
   , harmonySampler
+  , voicingAt
+  , voicingSampler
   ) where
 
 import Prelude
@@ -92,4 +94,25 @@ harmonyAt (Harmony p) t =
 harmonySampler :: Int -> Int -> String -> Array Int
 harmonySampler num den txt = case parseHarmony txt of
   Right h -> harmonyAt h (ratio (Integer.fromInt num) (Integer.fromInt den))
+  Left _ -> []
+
+-- | The notes sounding at cycle position `t`, as voiced: `harmonyAt` with
+-- | the octaves kept, in Tidal's note numbers (0 = c5), ascending, a note
+-- | held twice counted once. A ninth stays a ninth above its root rather than
+-- | folding to a second, which is what a chord-shaped quantisation needs
+-- | (docs/kb/plans/harmony-routes-coherent.md; `voicingAt` in oracle/render.hs).
+voicingAt :: Harmony -> Time -> Array Int
+voicingAt (Harmony p) t =
+  sort (nub (map nearest (mapMaybe holding (queryArc p t t))))
+  where
+  holding = case _ of
+    Digital { whole: Arc w, value } | w.start <= t && t < w.stop -> Just value
+    _ -> Nothing
+  nearest x = Integer.toInt (Double.floor (x + 0.5))
+
+-- | `harmonySampler` for voicings: pattern text to the notes at cycle
+-- | `num / den`, as voiced. Text that does not parse reads as a rest.
+voicingSampler :: Int -> Int -> String -> Array Int
+voicingSampler num den txt = case parseHarmony txt of
+  Right h -> voicingAt h (ratio (Integer.fromInt num) (Integer.fromInt den))
   Left _ -> []

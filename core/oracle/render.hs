@@ -39,6 +39,15 @@ harmonyAt p t = Data.List.sort (Data.List.nub
   | e <- queryArc p (Arc t t)
   , Just (Arc s e') <- [whole e], s <= t, t < e' ])
 
+-- The specification of Tidal.Harmony.voicingAt (ours): harmonyAt with the
+-- octaves kept, the notes as voiced (Tidal's note numbers, 0 = c5), so a
+-- ninth stays a ninth (docs/kb/plans/harmony-routes-coherent.md).
+voicingAt :: Pattern Note -> Rational -> [Int]
+voicingAt p t = Data.List.sort (Data.List.nub
+  [ floor (unNote (value e) + 0.5)
+  | e <- queryArc p (Arc t t)
+  , Just (Arc s e') <- [whole e], s <= t, t < e' ])
+
 -- The specification of Tidal.Scales.scaleAt (ours): the steps of the scales
 -- named at t, sampled as harmonyAt samples, rounded halves up; an unknown
 -- name gives nothing. scaleTable at Double, as Odonus reads it.

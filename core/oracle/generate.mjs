@@ -50,10 +50,13 @@ const harmonyCases = (await readFile(join(here, "harmony.txt"), "utf8"))
     return { at, pattern };
   });
 const harmony = [];
+const voicing = [];
 for (const c of harmonyCases) {
   const r = await ghci(`harmonyAt ${JSON.stringify(c.pattern)} (${c.at})`);
   harmony.push({ ...c, pcs: r.ok ? JSON.parse(r.out) : null });
   if (!r.ok) console.log(`refused by Tidal: harmony ${c.pattern}`);
+  const v = await ghci(`voicingAt ${JSON.stringify(c.pattern)} (${c.at})`);
+  voicing.push({ ...c, pcs: v.ok ? JSON.parse(v.out) : null });
 }
 
 // Tidal.Scales' sampler, against its specification in render.hs.
@@ -85,8 +88,9 @@ await writeFile(
 -- |
 -- | \`events\` are as oracle/render.hs renders them; \`Nothing\` means Tidal
 -- | refused the expression.
-module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony, scaleAt) where
+module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony, voicing, scaleAt) where
 
+import Prelude (negate)
 import Data.Maybe (Maybe(..))
 
 tidalVersion :: String
@@ -104,6 +108,14 @@ harmony :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
 harmony =
   [
 ${harmony.map(sampled).join(",\n")}
+  ]
+
+-- | Tidal.Harmony.voicingAt's cases: the same patterns, \`pcs\` the notes as
+-- | voiced (octaves kept).
+voicing :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
+voicing =
+  [
+${voicing.map(sampled).join(",\n")}
   ]
 
 -- | Tidal.Scales.scaleAt's cases, likewise (\`pcs\` are the steps).

@@ -3,8 +3,9 @@
 -- |
 -- | `events` are as oracle/render.hs renders them; `Nothing` means Tidal
 -- | refused the expression.
-module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony, scaleAt) where
+module Tidal.Conformance.TidalGolden (tidalVersion, golden, harmony, voicing, scaleAt) where
 
+import Prelude (negate)
 import Data.Maybe (Maybe(..))
 
 tidalVersion :: String
@@ -451,7 +452,56 @@ harmony =
   { pattern: "[c e]/0.5625", at: "9/16", pcs: Just [ 0 ] },
   { pattern: "[c@2 e]/0.5625", at: "9/16", pcs: Just [ 0 ] },
   { pattern: "[[d,g,gs]@6 [e,a,as]@3]/0.5625", at: "27/16", pcs: Just [ 2, 7, 8 ] },
-  { pattern: "[[c,e,g]@4 [cs,fs,as]@17]/1.3125", at: "21/16", pcs: Just [ 0, 4, 7 ] }
+  { pattern: "[[c,e,g]@4 [cs,fs,as]@17]/1.3125", at: "21/16", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "c'maj9", at: "0", pcs: Just [ 0, 2, 4, 7, 11 ] },
+  { pattern: "[0,4,7,12]", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "[-12,0,4,7,14]", at: "0", pcs: Just [ 0, 2, 4, 7 ] },
+  { pattern: "c3'maj e4'min", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "c3'maj e4'min", at: "1/2", pcs: Just [ 4, 7, 11 ] },
+  { pattern: "c'maj9'o", at: "0", pcs: Just [ 0, 2, 4, 7, 11 ] }
+  ]
+
+-- | Tidal.Harmony.voicingAt's cases: the same patterns, `pcs` the notes as
+-- | voiced (octaves kept).
+voicing :: Array { pattern :: String, at :: String, pcs :: Maybe (Array Int) }
+voicing =
+  [
+  { pattern: "c'maj7", at: "0", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "c'maj7", at: "1/3", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "0", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "3/2", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "2", pcs: Just [ 9, 12, 16, 19 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "5/2", pcs: Just [ 9, 12, 16, 19 ] },
+  { pattern: "<c'maj7 a'min7>/2", at: "4", pcs: Just [ 0, 4, 7, 11 ] },
+  { pattern: "c'maj e'min", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "c'maj e'min", at: "1/2", pcs: Just [ 4, 7, 11 ] },
+  { pattern: "c'maj e'min", at: "3/4", pcs: Just [ 4, 7, 11 ] },
+  { pattern: "[0,4,7]", at: "0", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "e'min7'ii", at: "0", pcs: Just [ 11, 14, 16, 19 ] },
+  { pattern: "g'dom7'o", at: "0", pcs: Just [ -5, 2, 11, 17 ] },
+  { pattern: "c'major'5", at: "0", pcs: Just [ 0, 4, 7, 12, 16 ] },
+  { pattern: "cs'min fs'maj", at: "0", pcs: Just [ 1, 4, 8 ] },
+  { pattern: "cs'min fs'maj", at: "1/2", pcs: Just [ 6, 10, 13 ] },
+  { pattern: "-1 [-13, 11]", at: "0", pcs: Just [ -1 ] },
+  { pattern: "-1 [-13, 11]", at: "1/2", pcs: Just [ -13, 11 ] },
+  { pattern: "a'min'd1", at: "0", pcs: Just [ 4, 9, 12 ] },
+  { pattern: "~ c'maj", at: "0", pcs: Just [  ] },
+  { pattern: "~ c'maj", at: "1/4", pcs: Just [  ] },
+  { pattern: "<c'maj ~>", at: "3/4", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "<c'maj ~>", at: "7/4", pcs: Just [  ] },
+  { pattern: "c'nonesuch", at: "0", pcs: Just [ 0 ] },
+  { pattern: "<c'maj7 f'maj7 g'dom7>", at: "1", pcs: Just [ 5, 9, 12, 16 ] },
+  { pattern: "<c'maj7 f'maj7 g'dom7>", at: "2", pcs: Just [ 7, 11, 14, 17 ] },
+  { pattern: "[c e]/0.5625", at: "9/16", pcs: Just [ 0 ] },
+  { pattern: "[c@2 e]/0.5625", at: "9/16", pcs: Just [ 0 ] },
+  { pattern: "[[d,g,gs]@6 [e,a,as]@3]/0.5625", at: "27/16", pcs: Just [ 2, 7, 8 ] },
+  { pattern: "[[c,e,g]@4 [cs,fs,as]@17]/1.3125", at: "21/16", pcs: Just [ 0, 4, 7 ] },
+  { pattern: "c'maj9", at: "0", pcs: Just [ 0, 4, 7, 11, 14 ] },
+  { pattern: "[0,4,7,12]", at: "0", pcs: Just [ 0, 4, 7, 12 ] },
+  { pattern: "[-12,0,4,7,14]", at: "0", pcs: Just [ -12, 0, 4, 7, 14 ] },
+  { pattern: "c3'maj e4'min", at: "0", pcs: Just [ -24, -20, -17 ] },
+  { pattern: "c3'maj e4'min", at: "1/2", pcs: Just [ -8, -5, -1 ] },
+  { pattern: "c'maj9'o", at: "0", pcs: Just [ -12, -5, 4, 11, 14 ] }
   ]
 
 -- | Tidal.Scales.scaleAt's cases, likewise (`pcs` are the steps).

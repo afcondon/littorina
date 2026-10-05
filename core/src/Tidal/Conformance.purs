@@ -24,6 +24,7 @@ module Tidal.Conformance
   , tidal
   , haskell
   , harmony
+  , voicing
   , scales
   , render
   , tidalVersion
@@ -53,7 +54,7 @@ import Haskell.Rational as Rational
 import JS.BigInt as BigInt
 import Tidal.Conformance.HaskellGolden as HaskellGolden
 import Tidal.Conformance.TidalGolden as TidalGolden
-import Tidal.Harmony (harmonyAt, parseHarmony)
+import Tidal.Harmony (harmonyAt, parseHarmony, voicingAt)
 import Tidal.Scales (parseScalePattern, scaleAt)
 import Tidal.Line (Command(..), parseLine)
 import Tidal.Pattern.Core (queryArc)
@@ -91,6 +92,20 @@ harmony = map compare1 TidalGolden.harmony
     , expected: maybe "refused" show g.pcs
     , actual: case parseHarmony g.pattern, position g.at of
         Right h, Just t -> show (harmonyAt h t)
+        Left _, _ -> "refused"
+        _, Nothing -> "(bad position " <> g.at <> ")"
+    }
+  position at = rational at <|> (fromInt <$> smallInt at)
+
+-- | The voicing sampler, compared: the same patterns, octaves kept.
+voicing :: Array Result
+voicing = map compare1 TidalGolden.voicing
+  where
+  compare1 g =
+    { input: "voicingAt " <> show g.pattern <> " (" <> g.at <> ")"
+    , expected: maybe "refused" show g.pcs
+    , actual: case parseHarmony g.pattern, position g.at of
+        Right h, Just t -> show (voicingAt h t)
         Left _, _ -> "refused"
         _, Nothing -> "(bad position " <> g.at <> ")"
     }
